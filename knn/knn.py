@@ -8,7 +8,15 @@ from .._base.base_model import BaseModel
 
 
 class BasicKNN(BaseModel):
-    """Naive implementation"""
+    """
+    Naive implementation
+    Training: O(1) time, O(1) space
+    Predicting: O(nd + nk) time, O(k) space
+
+    NB: Not saying that my implementation is of the above space-time complexity;
+    I've made some assignments for better readability, sorting for convenience, etc
+    which in the optimal implementation you wouldn't so just keep that in mind.
+    """
     def __init__(self, k):
         self._k = k
         self._X = None
@@ -58,6 +66,15 @@ class BasicKNN(BaseModel):
 
 
 class OptimizedKNN(BaseModel):
+    """
+    Optimized implementation using KDTree
+    Training: O(nlogn) time, O(n) space
+    Predicting: O(klogn) time, O(k) space
+
+    NB: Not saying that my implementation is of the above space-time complexity;
+    I've made some assignments for better readability, sorting for convenience, etc
+    which in the optimal implementation you wouldn't so just keep that in mind.
+    """
     def __init__(self, k):
         self._k = k
         self._X = None # stored as KDTree
