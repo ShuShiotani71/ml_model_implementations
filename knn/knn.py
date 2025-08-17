@@ -69,6 +69,8 @@ class OptimizedKNN(BaseModel):
         self._y = y
 
     def predict(self, X, dist_metric=None):
+        if self._X is None:
+            raise ValueError("Must fit model first.")
         self._check_input(X)
 
         if dist_metric is None or dist_metric == "euclidean":
