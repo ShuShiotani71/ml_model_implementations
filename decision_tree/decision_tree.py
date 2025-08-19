@@ -12,11 +12,16 @@ class DecisionTreeModel(BaseModel):
     def __init__(self):
         self._tree = None
 
-    def fit(self, X, y, categories, numerics, stopping_criteria=None, depth=0):
+    def fit(self, X, y, categories, numerics, stopping_criteria=None):
+        self._tree = self._fit(X, y, categories, numerics, stopping_criteria)
+
+    def _fit(self, X, y, categories, numerics, stopping_criteria=None, depth=0):
         """
         categories: list of categorical columns
         numerics: list of numerical columns
         """
+        if stopping_criteria is None:
+            stopping_criteria = ("max_depth", 10)
         if stopping_criteria not in ("max_depth", "min_nodes"):
             raise ValueError("Unrecognized stopping criteria")
         if stopping_criteria[0] == "max_depth" and depth >= stopping_criteria[1]:
@@ -46,14 +51,15 @@ class DecisionTreeModel(BaseModel):
         node = gini[split_feature]["node"]
 
         X_left, X_right = node.split(X)
-        node.left = self.fit(X_left, y[X_left.index], categories, numerics, stopping_criteria, depth + 1)
-        node.right = self.fit(X_right, y[X_right.index], categories, numerics, stopping_criteria, depth + 1)
+        node.left = self._fit(X_left, y[X_left.index], categories, numerics, stopping_criteria, depth + 1)
+        node.right = self._fit(X_right, y[X_right.index], categories, numerics, stopping_criteria, depth + 1)
         return node
 
     @abstractmethod
     def _calc_prediction(self, X, y):
         pass
 
+    # might move this to nodes.py as a function as it depends on the node class
     @staticmethod
     def _calc_gini(node, X, y):
         """weighted gini coefficient"""
@@ -89,10 +95,12 @@ class DecisionTreeModel(BaseModel):
 
 
 class DecisionTreeClassifier(DecisionTreeModel):
-    def _calc_prediction(self, y):
+    @staticmethod
+    def _calc_prediction(y):
         return y.value_counts().sort_values().index[-1] # can optimize
 
 
 class DecisionTreeRegressor(DecisionTreeModel):
-    def _calc_prediction(self, y):
+    @staticmethod
+    def _calc_prediction(y):
         return y.mean()
