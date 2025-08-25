@@ -36,8 +36,9 @@ class DecisionTreeModel(BaseModel):
             return DecisionTreeLeafNode(self._calc_prediction(y))
 
         # we keep track since might need to use one with second lowest gini if categorical value is missing
-        # ie surrogate split. Also need to think about what to do if null in training and prediction, for
-        # categorical and numerical data.
+        # ie surrogate split.
+        # Also need to think about what to do if null in training and prediction, for categorical and numerical data.
+        # Also need to think about how to handle unseen categorical values when predicting
         candidates = {}
         for feature in X.columns:
             current = X[feature]
