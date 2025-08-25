@@ -35,13 +35,15 @@ class DecisionTreeModel(BaseModel):
         if stopping_criteria[0] == "min_nodes" and len(y) <= stopping_criteria[1]:
             return DecisionTreeLeafNode(self._calc_prediction(y))
 
-        # we keep track since might need to use one with second lowest gini if categorical value us missing
+        # we keep track since might need to use one with second lowest gini if categorical value is missing
+        # ie surrogate split. Also need to think about what to do if null in training and prediction, for
+        # categorical and numerical data.
         candidates = {}
         for feature in X.columns:
             current = X[feature]
             if feature in numerics:
                 current = current.sort_values().values # since we don't want indices on the next line
-                midpoints = (current[:-1] + current[1:]) / 2 # what to do with null values?
+                midpoints = (current[:-1] + current[1:]) / 2
                 for midpoint in midpoints:
                     node = NumericDecisionTreeNode(feature, midpoint)
                     score = self._calc_split_metric(node, X, y)
