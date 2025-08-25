@@ -18,29 +18,29 @@ class DecisionTreeInternalNode(ABC):
         self.right = right
 
     @abstractmethod
-    def _split(self, X):
+    def split(self, X):
         pass
 
 
 class NumericDecisionTreeNode(DecisionTreeInternalNode):
-    def __init__(self, feature, threshold, left=None, right=None, prediction=None):
+    def __init__(self, feature, threshold, left=None, right=None):
         self._threshold = threshold
-        super().__init__(feature, left, right, prediction)
+        super().__init__(feature, left, right)
 
-    def _split(self, X):
+    def split(self, X):
         # Might be better to create copy
         X_right = X[X[self._feature] > self._threshold]
-        X_left = X[X[self._feature] < self._threshold]
+        X_left = X[X[self._feature] <= self._threshold]
         return X_left, X_right
 
 
 class CategoricalDecisionTreeNode(DecisionTreeInternalNode):
-    def __init__(self, feature, left_values, right_values, left=None, right=None, prediction=None):
+    def __init__(self, feature, left_values, right_values, left=None, right=None):
         self._left_values = left_values
         self._right_values = right_values
-        super().__init__(feature, left, right, prediction)
+        super().__init__(feature, left, right)
 
-    def _split(self, X):
+    def split(self, X):
         # Might be better to create copy
         X_right = X[X[self._feature].isin(self._right_values)]
         X_left = X[X[self._feature].isin(self._left_values)]

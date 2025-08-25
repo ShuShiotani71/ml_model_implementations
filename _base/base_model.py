@@ -11,6 +11,9 @@ class BaseModel(ABC):
     def predict(self, X):
         self._check_input(X)
 
+    # might make more sense to make this a separate mixin
+    # because its like a standalone functionality and actually
+    # it doesnt even need self (so should at least be a static method)
     def _check_input(self, X, y=None):
         if len(X.shape) < 2:
             raise ValueError("X must be a 2D array-like structure.")

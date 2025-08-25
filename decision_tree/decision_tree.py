@@ -4,7 +4,8 @@ import numpy as np
 import pandas as pd
 
 from .._base.base_model import BaseModel
-from .._utils.numerical import gini
+from .._utils.numerical import gini, mse
+from .._utils.helper import partitions
 from .nodes import NumericDecisionTreeNode, CategoricalDecisionTreeNode, DecisionTreeLeafNode
 
 
@@ -20,9 +21,14 @@ class DecisionTreeModel(BaseModel):
         categories: list of categorical columns
         numerics: list of numerical columns
         """
+        # perfectly separated
+        if self._split_metric(y) == 0:
+            return DecisionTreeLeafNode(self._calc_prediction(y))
+
+        # stopping criteria
         if stopping_criteria is None:
             stopping_criteria = ("max_depth", 10)
-        if stopping_criteria not in ("max_depth", "min_nodes"):
+        if stopping_criteria[0] not in ("max_depth", "min_nodes"):
             raise ValueError("Unrecognized stopping criteria")
         if stopping_criteria[0] == "max_depth" and depth >= stopping_criteria[1]:
             return DecisionTreeLeafNode(self._calc_prediction(y))
@@ -30,45 +36,72 @@ class DecisionTreeModel(BaseModel):
             return DecisionTreeLeafNode(self._calc_prediction(y))
 
         # we keep track since might need to use one with second lowest gini if categorical value us missing
-        gini = {}
+        candidates = {}
         for feature in X.columns:
+            current = X[feature]
             if feature in numerics:
-                current = X[feature].sort_values()
-                midpoints = (current[:-1] + current[1:]) / 2
+                current = current.sort_values().values # since we don't want indices on the next line
+                midpoints = (current[:-1] + current[1:]) / 2 # what to do with null values?
                 for midpoint in midpoints:
                     node = NumericDecisionTreeNode(feature, midpoint)
-                    gini_ = self._calc_gini(node, X, y)
-                    if feature not in gini or gini_ < gini[feature]["coef"]:
-                        gini[feature] = {"coef": gini_, "node": node}
-
+                    score = self._calc_split_metric(node, X, y)
+                    if feature not in candidates or score < candidates[feature]["score"]:
+                        candidates[feature] = {"score": score, "node": node}
             elif feature in categories:
-                pass # TODO: implement this
-
+                for partition in partitions(current.unique(), 2):
+                    node = CategoricalDecisionTreeNode(feature, *partition)
+                    score = self._calc_split_metric(node, X, y)
+                    if feature not in candidates or score < candidates[feature]["score"]:
+                        candidates[feature] = {"score": score, "node": node}
             else:
                 raise ValueError("column not found in categories or numerics")
 
-        split_feature = min(gini, key=lambda item_key: gini[item_key]["coef"])
-        node = gini[split_feature]["node"]
-
+        # can just keep track as we go
+        split_feature = min(
+            candidates,
+            key=lambda item_key: candidates[item_key]["score"]
+        )
+        node = candidates[split_feature]["node"]
         X_left, X_right = node.split(X)
-        node.left = self._fit(X_left, y[X_left.index], categories, numerics, stopping_criteria, depth + 1)
-        node.right = self._fit(X_right, y[X_right.index], categories, numerics, stopping_criteria, depth + 1)
+
+        node.left = self._fit(
+            X_left,
+            y[X_left.index],
+            categories,
+            numerics,
+            stopping_criteria,
+            depth + 1
+        )
+        node.right = self._fit(
+            X_right,
+            y[X_right.index],
+            categories,
+            numerics,
+            stopping_criteria,
+            depth + 1
+        )
         return node
 
     @abstractmethod
     def _calc_prediction(self, X, y):
         pass
 
-    # might move this to nodes.py as a function as it depends on the node class
-    @staticmethod
-    def _calc_gini(node, X, y):
-        """weighted gini coefficient"""
+    @abstractmethod
+    def _split_metric(self, y_left, y_right):
+        """
+        Must be such that a perfect split (pure node, in the case of classification
+        and one whose distance metric = 0 for regression) returns zero
+        """
+        pass
+
+    def _calc_split_metric(self, node, X, y):
+        """weighted split metric"""
         X_left, X_right = node.split(X)
         y_left = y[X_left.index]
         y_right = y[X_right.index]
-
         return (
-            gini(y_left) * len(y_left) + gini(y_right) * len(y_right)
+            self._split_metric(y_left) * len(y_left)
+            + self._split_metric(y_right) * len(y_right)
         ) / len(y)
 
     def predict(self, X):
@@ -82,6 +115,8 @@ class DecisionTreeModel(BaseModel):
         """
         if output is None:
             output = []
+        if len(X) == 0: # empty branch
+            return output
         if node.left is None and node.right is None:
             output.append(
                 pd.Series([node.prediction] * len(X), index=X.index)
@@ -99,8 +134,16 @@ class DecisionTreeClassifier(DecisionTreeModel):
     def _calc_prediction(y):
         return y.value_counts().sort_values().index[-1] # can optimize
 
+    @staticmethod
+    def _split_metric(y):
+        return gini(y)
+
 
 class DecisionTreeRegressor(DecisionTreeModel):
     @staticmethod
     def _calc_prediction(y):
         return y.mean()
+
+    @staticmethod
+    def _split_metric(y):
+        return mse(y)
