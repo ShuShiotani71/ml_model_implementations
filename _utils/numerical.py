@@ -8,3 +8,8 @@ def laplace_smoothing(num, denom, alpha=1):
     :return: Smoothed probabilities."""
     return (num + alpha) / (denom + alpha * len(num))
 
+def gini(x):
+    return 1 - ((x.value_counts() / len(x)) ** 2).sum()
+
+def mse(x):
+    return ((x - x.mean()) ** 2).sum()
