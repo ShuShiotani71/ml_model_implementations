@@ -21,6 +21,10 @@ class LinearModel(BaseModel):
 
 class LinearRegression(LinearModel):
     def fit(self, X, y):
+        """
+        Analytical solution using OLS (which is also equivalent
+        to MLE under those assumptions)
+        """
         X = pd.concat(
             [pd.Series(np.ones(len(X)), index=X.index), X],
             axis=1
@@ -75,6 +79,9 @@ class GeneralizedLinearModel(LinearModel):
 
     @abstractmethod
     def _pred_func(self, Xb):
+        """
+        Inverse of the link function, for calculating the prediction
+        """
         pass
 
 
