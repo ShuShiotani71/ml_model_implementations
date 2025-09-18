@@ -5,8 +5,8 @@ from abc import ABC, abstractmethod
 class BaseModel(ABC):
     @abstractmethod
     def fit(self, X, y):
-        self._check_input(X, y)
+        pass
 
     @abstractmethod
     def predict(self, X):
-        self._check_input(X)
+        pass
