@@ -31,7 +31,6 @@ class BasicKNN(BaseModel):
         self._y = y
 
     def predict(self, X, dist_metric=None):
-        self._check_input(X)
         if self._X is None or self._y is None:
             raise ValueError("Must fit model first.")
         self._check_input(X)
