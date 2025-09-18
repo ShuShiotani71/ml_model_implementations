@@ -5,6 +5,7 @@ import pandas as pd
 import scipy
 
 from .._base.base_model import BaseModel
+from .._utils.checkers import check_input_shape
 
 
 class BasicKNN(BaseModel):
@@ -22,18 +23,18 @@ class BasicKNN(BaseModel):
         self._X = None
         self._y = None
 
+    @check_input_shape
     def fit(self, X, y):
         """
         could also implement add_data() which you can use to add a data point
         """
-        self._check_input(X, y)
         self._X = X
         self._y = y
 
+    @check_input_shape
     def predict(self, X, dist_metric=None):
         if self._X is None or self._y is None:
             raise ValueError("Must fit model first.")
-        self._check_input(X)
         dist_func = self._get_dist_func(dist_metric)
 
         res = []
@@ -79,15 +80,15 @@ class OptimizedKNN(BaseModel):
         self._X = None # stored as KDTree
         self._y = None
 
+    @check_input_shape
     def fit(self, X, y, **kwargs):
-        self._check_input(X, y)
         self._X = scipy.spatial.KDTree(X, **kwargs)
         self._y = y
 
+    @check_input_shape
     def predict(self, X, dist_metric=None):
         if self._X is None:
             raise ValueError("Must fit model first.")
-        self._check_input(X)
 
         if dist_metric is None or dist_metric == "euclidean":
             p = 2

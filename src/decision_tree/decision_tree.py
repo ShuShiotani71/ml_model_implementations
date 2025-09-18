@@ -6,6 +6,7 @@ import pandas as pd
 from .._base.base_model import BaseModel
 from .._utils.numerical import gini, mse
 from .._utils.helper import partitions
+from .._utils.checkers import check_input_shape
 from .nodes import NumericDecisionTreeNode, CategoricalDecisionTreeNode, DecisionTreeLeafNode
 
 
@@ -13,6 +14,7 @@ class DecisionTreeModel(BaseModel):
     def __init__(self):
         self._tree = None
 
+    @check_input_shape
     def fit(self, X, y, categories, numerics, stopping_criteria=None):
         self._tree = self._fit(X, y, categories, numerics, stopping_criteria)
 
@@ -107,6 +109,7 @@ class DecisionTreeModel(BaseModel):
             + self._split_metric(y_right) * len(y_right)
         ) / len(y)
 
+    @check_input_shape
     def predict(self, X):
         pred = self._forward(self._tree, X)
         pred = pd.concat(pred)

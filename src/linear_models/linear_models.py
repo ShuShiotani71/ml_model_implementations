@@ -5,12 +5,14 @@ import pandas as pd
 import scipy
 
 from .._base.base_model import BaseModel
+from .._utils.checkers import check_input_shape
 
 
 class LinearModel(BaseModel):
     def __init__(self):
         self._coefs = None
 
+    @check_input_shape
     def predict(self, X):
         X = pd.concat(
             [pd.Series(np.ones(len(X)), index=X.index), X],
@@ -20,6 +22,7 @@ class LinearModel(BaseModel):
 
 
 class LinearRegression(LinearModel):
+    @check_input_shape
     def fit(self, X, y):
         """
         Analytical solution using OLS (which is also equivalent
@@ -41,6 +44,7 @@ class GeneralizedLinearModel(LinearModel):
             }
         super().__init__()
 
+    @check_input_shape
     def fit(self, X, y, initial_coefs=None, **kwargs):
         if initial_coefs is not None and X.shape[1] != len(initial_coefs) - 1:
             raise ValueError("The number of features of X must be len(coefs)-1.")
@@ -66,6 +70,7 @@ class GeneralizedLinearModel(LinearModel):
         )
         self._coefs = result.x.reshape(-1, 1)
 
+    @check_input_shape
     def predict(self, X):
         return self._pred_func(super().predict(X))
 

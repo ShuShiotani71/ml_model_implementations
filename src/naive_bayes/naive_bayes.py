@@ -7,6 +7,7 @@ import scipy
 
 from .._base.base_model import BaseModel
 from .._utils.numerical import laplace_smoothing
+from .._utils.checkers import check_input_shape
 
 
 class NaiveBayes(BaseModel):
@@ -17,6 +18,7 @@ class NaiveBayes(BaseModel):
     def __init__(self):
         self._params = defaultdict(dict)
 
+    @check_input_shape
     def fit(self, X, y):
         self._check_input(X)
         for label in y.unique():
@@ -42,6 +44,7 @@ class NaiveBayes(BaseModel):
         """
         pass
 
+    @check_input_shape
     def predict(self, X):
         if not self._params:
             raise RuntimeError("Model has not been fitted yet.")
@@ -76,7 +79,6 @@ class BernoulliNaiveBayes(NaiveBayes):
         return output
 
     def _check_input(self, X):
-        super()._check_input(X)
         is_one = X == 1
         is_zero = X == 0
         if not (is_one | is_zero).all().all().all():
@@ -101,7 +103,6 @@ class MultinomialNaiveBayes(NaiveBayes):
         return output
 
     def _check_input(self, X):
-        super()._check_input(X)
         if not all([pd.api.types.is_integer_dtype(X[col]) for col in X.columns]): # can only check for each column
             raise TypeError("Input must be an integer matrix.")
         if (X < 0).any().any():
@@ -133,6 +134,5 @@ class GaussianNaiveBayes(NaiveBayes):
         return output
 
     def _check_input(self, X):
-        super()._check_input(X)
         if not all([pd.api.types.is_numeric_dtype(X[col]) for col in X.columns]): # can only check for each column
             raise TypeError("Input must be a numeric matrix.")
