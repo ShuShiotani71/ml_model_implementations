@@ -90,16 +90,14 @@ class SVMClassifier(BaseSVM):
 
     @check_input_shape
     def _decision_func(self, X):
-        y_k_tiled = np.tile(self._sv_y.iloc[0], (len(X), 1))
+        y_k_tiled = np.tile(self._sv_y.iloc[0], len(X))
         X_k_tiled = np.tile(self._sv_X.iloc[0], (len(X), 1))
-        lambda_tiled = np.tile(self._coefs, (len(X), 1))
-        y_tiled = np.tile(self._sv_y, (len(X), 1))
 
         diff_kernel = self._kernel_func(self._sv_X, X) - self._kernel_func(self._sv_X, X_k_tiled)
         # print(y_k_tiled.shape, X_k_tiled.shape, lambda_tiled.shape, y_tiled.shape, diff_kernel.shape)
         return np.sign(
-            y_k_tiled.flatten()
-            + np.sum(lambda_tiled.T * y_tiled.T * diff_kernel)
+            y_k_tiled
+            + np.sum(self._coefs * self._sv_y * diff_kernel.T, axis=1)
         )
 
     def _constraints(self, y):
